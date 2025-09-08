@@ -17,7 +17,7 @@ A Python Flask API for retrieving YouTube video transcripts.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/youtube-transcript-api.git
+git clone https://github.com/deniskoblya/youtube-transcript-api.git
 cd youtube-transcript-api
 ```
 
