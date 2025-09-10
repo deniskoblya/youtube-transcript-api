@@ -4,12 +4,28 @@ YouTube Transcript API для Railway
 """
 
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import ProxyHandler
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
+import requests
 
 app = Flask(__name__)
 CORS(app)  # Разрешаем CORS для всех доменов
+
+# Получаем прокси из переменных окружения
+PROXY_URL = os.environ.get('PROXY_URL')  # Формат: http://username:password@proxy:port
+
+def get_proxy_config():
+    """Получает настройки прокси из переменных окружения"""
+    if PROXY_URL:
+        print(f"🔄 Используем прокси: {PROXY_URL[:20]}...")
+        proxies = {
+            'http': PROXY_URL,
+            'https': PROXY_URL
+        }
+        return proxies
+    return None
 
 @app.route('/transcript', methods=['GET'])
 def get_transcript():
@@ -23,8 +39,16 @@ def get_transcript():
         return jsonify({'error': 'video_id is required'}), 400
     
     try:
-        # Используем правильный API - создаем экземпляр класса
-        api = YouTubeTranscriptApi()
+        # Настраиваем прокси если доступен
+        proxy_config = get_proxy_config()
+        
+        if proxy_config:
+            # Создаем проксированный экземпляр API
+            proxy_handler = ProxyHandler(proxy_config)
+            api = YouTubeTranscriptApi(proxy_handler=proxy_handler)
+        else:
+            # Используем обычный API
+            api = YouTubeTranscriptApi()
         
         # Пробуем разные языки
         languages_to_try = [lang, 'en', 'ru', 'es', 'fr', 'de']
@@ -104,9 +128,11 @@ def health():
 
 @app.route('/', methods=['GET'])
 def home():
+    proxy_status = "enabled" if PROXY_URL else "disabled"
     return jsonify({
         'name': 'YouTube Transcript API',
         'version': '1.0.0',
+        'proxy': proxy_status,
         'endpoints': {
             '/health': 'Health check',
             '/transcript': 'Get video transcript (params: video_id, lang)'
