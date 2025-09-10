@@ -4,7 +4,6 @@ YouTube Transcript API для Railway
 """
 
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.proxies import ProxyHandler
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
@@ -39,16 +38,17 @@ def get_transcript():
         return jsonify({'error': 'video_id is required'}), 400
     
     try:
-        # Настраиваем прокси если доступен
+        # Настраиваем прокси если доступен через переменные окружения
         proxy_config = get_proxy_config()
         
         if proxy_config:
-            # Создаем проксированный экземпляр API
-            proxy_handler = ProxyHandler(proxy_config)
-            api = YouTubeTranscriptApi(proxy_handler=proxy_handler)
-        else:
-            # Используем обычный API
-            api = YouTubeTranscriptApi()
+            # Устанавливаем переменные окружения для прокси
+            os.environ['HTTP_PROXY'] = proxy_config['http']
+            os.environ['HTTPS_PROXY'] = proxy_config['https']
+            print(f"🔄 Используем прокси для запросов")
+        
+        # Используем обычный API
+        api = YouTubeTranscriptApi()
         
         # Пробуем разные языки
         languages_to_try = [lang, 'en', 'ru', 'es', 'fr', 'de']
